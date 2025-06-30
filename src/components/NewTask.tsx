@@ -60,6 +60,7 @@ const MyCheckbox = ({
           <span>{children}</span>
         </label>
       </div>
+      bonjour
       <div className='error'>{isError ? meta.error : null}</div>
     </>
   );
