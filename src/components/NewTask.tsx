@@ -2,14 +2,14 @@ import { useTaskContext } from '../contexts/TasksContext';
 import * as Yup from 'yup';
 import {
   Form,
-  useField,
   type FormikHelpers,
   Formik,
   Field,
   type FieldProps,
 } from 'formik';
-import type { ReactNode } from 'react';
 import TaskPrioritySelector from './TaskPrioritySelector';
+import TextInput from './TextInput';
+import Checkbox from './Checkbox';
 
 type NewTaskValues = {
   task: string;
@@ -17,70 +17,6 @@ type NewTaskValues = {
   done: boolean;
   priority: string;
 };
-
-const MyTextInput = ({
-  label,
-  ...props
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) => {
-  // field = Field props (label, name, onChange)
-  // meta = Field state (touched, error, ...)
-  const [field, meta] = useField(props);
-  const isError = meta.error && meta.value !== '';
-  const inputId = props.id || props.name;
-
-  return (
-    <>
-      {/* <div>{`${label} feedback : ${meta.value}`}</div> */}
-      {/* &nbsp; = create space between html tags */}
-      <label htmlFor={inputId}>{label}</label>
-      <input
-        id={inputId}
-        style={{ color: isError ? 'red' : undefined }}
-        {...field}
-        {...props}
-      />
-      <div className='error'>{isError ? meta.error : null}</div>
-    </>
-  );
-};
-
-const MyCheckbox = ({
-  children,
-  ...props
-}: { children: ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) => {
-  const [field, meta] = useField({ ...props, type: 'checkbox' });
-  const isError = meta.touched && meta.error;
-  const inputId = props.id || props.name;
-
-  return (
-    <>
-      <div className='checkbox-input'>
-        <label htmlFor={inputId}>
-          <input id={inputId} type='checkbox' {...field} {...props} />
-          <span>{children}</span>
-        </label>
-      </div>
-      bonjour
-      <div className='error'>{isError ? meta.error : null}</div>
-    </>
-  );
-};
-
-// const MySelect = ({
-//   label,
-//   ...props
-// }: { label: string } & React.SelectHTMLAttributes<HTMLSelectElement>) => {
-//   const [field, meta] = useField(props);
-//   const isError = meta.touched && meta.error;
-
-//   return (
-//     <div>
-//       <label htmlFor={props.id || props.name}>{label}</label>
-//       <select {...field} {...props} />
-//       {isError ? <div className='error'>{meta.error}</div> : null}
-//     </div>
-//   );
-// };
 
 export default function NewTask() {
   const { addNewTask } = useTaskContext();
@@ -122,20 +58,20 @@ export default function NewTask() {
         onSubmit={onSubmit}
       >
         {({ isValid, dirty }) => (
-          <Form className='new-task-form'>
-            <MyTextInput
+          <Form className='max-w-[25em] mx-auto my-4 p-[1rem] px-[1.2rem] border border-sky-300 rounded-md shadow-sm font-sans text-base'>
+            <TextInput
               label='Your task'
               name='task'
               type='text'
               placeholder='Insert your task here'
             />
-            <MyTextInput
+            <TextInput
               label='Task description'
               name='description'
               type='text'
               placeholder='Insert your task description here'
             />
-            <MyCheckbox name='done'>Task already done ?</MyCheckbox>``
+            <Checkbox name='done'>Task already done ?</Checkbox>
             <Field
               name='priority'
               render={({ field, meta }: FieldProps) => (
@@ -143,7 +79,16 @@ export default function NewTask() {
               )}
             />
             {/* button disabled if the form is not valid or hasn't been filled */}
-            <button type='submit' disabled={!isValid || !dirty}>
+            <button
+              type='submit'
+              disabled={!isValid || !dirty}
+              className={`mt-5 rounded-lg text-[1rem] px-4 py-[0.45rem] font-medium ${
+                !isValid || !dirty
+                  ? 'bg-white border border-sky-300 text-black cursor-not-allowed'
+                  : 'bg-[#1976d2] text-white border-none cursor-pointer hover:brightness-125 hover:scale-105 transition duration-200'
+              }
+  `}
+            >
               Add task
             </button>
           </Form>

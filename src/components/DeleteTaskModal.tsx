@@ -14,15 +14,21 @@ export default function DeleteTaskModal({
   onCancel,
 }: DeleteTaskModalProps) {
   return ReactDOM.createPortal(
-    <div className='modal-overlay'>
-      <div className='modal'>
-        <h2>{title}</h2>
+    <div className='fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-[1000]'>
+      <div className='bg-white p-6 rounded-lg w-[90%] max-w-[400px] shadow-md flex flex-col gap-4 text-center'>
+        <h2 className='text-xl font-semibold'>{title}</h2>
         <p>{message}</p>
-        <div className='modal-buttons'>
-          <button className='modal-button confirm' onClick={onConfirm}>
+        <div className='flex justify-between gap-3 mt-2'>
+          <button
+            onClick={onConfirm}
+            className='flex-1 px-3 py-2 rounded cursor-pointer font-bold border-0 bg-[#bd1613] text-white hover:brightness-75 transition'
+          >
             Delete task
           </button>
-          <button className='modal-button cancel' onClick={onCancel}>
+          <button
+            onClick={onCancel}
+            className='flex-1 px-3 py-2 rounded cursor-pointer font-bold border-0 bg-gray-300 hover:brightness-75 transition'
+          >
             Cancel
           </button>
         </div>

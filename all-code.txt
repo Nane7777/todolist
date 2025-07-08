@@ -1,0 +1,851 @@
+import { HeaderMenu } from './components/HeaderMenu';
+import AppRoutes from './Routes';
+
+export type TaskItem = {
+  id: number;
+  title: string;
+  description: string;
+  done: boolean;
+  detailed: boolean;
+};
+
+function App() {
+  return (
+    <div>
+      <div>
+        <HeaderMenu />
+      </div>
+      <div>
+        <AppRoutes />
+      </div>
+    </div>
+  );
+}
+
+export default App;
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: React.ReactNode;
+  className?: string;
+};
+
+export default function Button({
+  children,
+  className = '',
+  ...rest
+}: ButtonProps) {
+  const baseClasses =
+    'isolate mt-3 m-1 rounded-lg text-[1rem] px-4 py-[0.45rem] cursor-pointer font-medium hover:brightness-110';
+
+  return (
+    <button className={`${baseClasses} ${className}`} {...rest}>
+      {children}
+    </button>
+  );
+}
+import Button from './Button';
+
+type ButtonFormProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  isValid: boolean;
+  dirty: boolean;
+  children: React.ReactNode;
+};
+
+export function ButtonForm({
+  isValid,
+  dirty,
+  children,
+  ...rest
+}: ButtonFormProps) {
+  const disabled = !isValid || !dirty;
+
+  const enabledClasses = 'bg-[#1976d2] text-white border-none cursor-pointer';
+  const disabledClasses =
+    'bg-white border border-sky-300 text-black cursor-not-allowed';
+
+  const className = disabled ? disabledClasses : enabledClasses;
+
+  return (
+    <Button type='submit' disabled={disabled} className={className} {...rest}>
+      {children}
+    </Button>
+  );
+}
+import type { ReactNode } from 'react';
+import { useField } from 'formik';
+
+type CheckboxProps = {
+  children: ReactNode;
+} & React.InputHTMLAttributes<HTMLInputElement>;
+
+export default function Checkbox({ children, ...props }: CheckboxProps) {
+  const [field, meta] = useField({ ...props, type: 'checkbox' });
+  const isError = meta.touched && meta.error;
+  const inputId = props.id || props.name;
+
+  return (
+    <>
+      <div className='flex items-center text-base cursor-default select-none hover:brightness-105 hover:scale-105 transition duration-200'>
+        <label
+          htmlFor={inputId}
+          className='inline-flex items-center gap-[0.4rem] cursor-pointer mb-[0.2rem] font-medium text-[#333]'
+        >
+          <input
+            id={inputId}
+            type='checkbox'
+            className='peer flex items-center text-base cursor-pointer select-none'
+            {...field}
+            {...props}
+          />
+          <span className='px-[0.4rem] py-[0.15rem] rounded-md bg-[#f7a59a] peer-checked:bg-[#3cb371] peer-checked:text-white'>
+            {children}
+          </span>
+        </label>
+      </div>
+      <div className='text-red-600 text-[0.9rem] -mt-[0.3rem] mb-[0.4rem]'>
+        {isError ? meta.error : null}
+      </div>
+    </>
+  );
+}
+import { useNavigate } from 'react-router';
+import { useTaskContext } from '../contexts/TasksContext';
+
+export default function Dashboard() {
+  const { doneCount, totalCount } = useTaskContext();
+  const navigate = useNavigate();
+
+  const doneTasksRatio = doneCount / totalCount;
+
+  const colorClasses =
+    doneTasksRatio === 0
+      ? 'bg-[#f7a59a] text-[#5a2e0c] border-2 border-[#5a2e0c]'
+      : doneTasksRatio < 0.25
+      ? 'bg-[#f3b16a] text-[#5a2e0c] border-2 border-[#5a2e0c]'
+      : doneTasksRatio < 0.5
+      ? 'bg-[#f7d878] text-[#5a2e0c] border-2 border-[#5a2e0c]'
+      : 'bg-[#6fcf97] text-[#1f4723] border-2 border-[#1f4723]';
+
+  const tasksCount = `${
+    doneCount <= 1 ? 'Task' : 'Tasks'
+  } done : ${doneCount}/${totalCount} ${doneCount === totalCount ? '🦆' : ''}`;
+
+  return (
+    <div>
+      <button
+        className={`text-5xl font-medium rounded-lg border py-4 px-8 m-2 cursor-pointer hover:brightness-105 hover:scale-105 transition duration-200 ${colorClasses}`}
+        onClick={() => navigate('/dashboard')}
+      >
+        {tasksCount}
+      </button>
+    </div>
+  );
+}
+import ReactDOM from 'react-dom';
+
+type DeleteTaskModalProps = {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+export default function DeleteTaskModal({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+}: DeleteTaskModalProps) {
+  return ReactDOM.createPortal(
+    <div className='fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-[1000]'>
+      <div className='bg-white p-6 rounded-lg w-[90%] max-w-[400px] shadow-md flex flex-col gap-4 text-center'>
+        <h2 className='text-xl font-semibold'>{title}</h2>
+        <p>{message}</p>
+        <div className='flex justify-between gap-3 mt-2'>
+          <button
+            onClick={onConfirm}
+            className='flex-1 px-3 py-2 rounded cursor-pointer font-bold border-0 bg-[#bd1613] text-white hover:brightness-75 transition'
+          >
+            Delete task
+          </button>
+          <button
+            onClick={onCancel}
+            className='flex-1 px-3 py-2 rounded cursor-pointer font-bold border-0 bg-gray-300 hover:brightness-75 transition'
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.getElementById('modal-root')!
+  );
+}
+import { Link } from 'react-router';
+import { useTaskContext } from '../contexts/TasksContext';
+
+export function HeaderMenu() {
+  const { tasks } = useTaskContext();
+
+  return (
+    <nav className='fixed top-0 left-1/2 transform -translate-x-1/2 w-[960px] bg-gray-900 rounded-lg shadow-md z-[999] py-2.5 px-5'>
+      <ul className='flex items-center m-0 p-0 list-none'>
+        <li className='mr-2.5'>
+          <Link
+            to='/'
+            className='text-white font-medium px-3 py-2 inline-block no-underline cursor-pointer hover:text-gray-300'
+          >
+            Home
+          </Link>
+        </li>
+        <li className='mr-2.5'>
+          <Link
+            to='/dashboard'
+            className='text-white font-medium px-3 py-2 inline-block no-underline cursor-pointer hover:text-gray-300'
+          >
+            Dashboard
+          </Link>
+        </li>
+        <li className='relative mr-2.5 group'>
+          <span className='text-white font-medium px-3 py-2 inline-block cursor-pointer select-none'>
+            Task ▼
+          </span>
+          <ul className='absolute top-full left-0 bg-gray-700 rounded-md shadow-lg min-w-[180px] z-50 hidden group-hover:block list-none p-0 m-0'>
+            {tasks.map((task) => (
+              <li
+                key={task.id}
+                className='px-3 py-2 whitespace-nowrap text-white hover:bg-gray-600 cursor-pointer'
+              >
+                <Link to={`/task/${task.id}`} className='no-underline'>
+                  {task.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </li>
+        <li>
+          <Link
+            to='/*'
+            className='text-white font-medium px-3 py-2 inline-block no-underline cursor-pointer hover:text-gray-300'
+          >
+            Wrong address
+          </Link>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+import { useTaskContext } from '../contexts/TasksContext';
+import * as Yup from 'yup';
+import {
+  Form,
+  type FormikHelpers,
+  Formik,
+  Field,
+  type FieldProps,
+} from 'formik';
+import TaskPrioritySelector from './TaskPrioritySelector';
+import TextInput from './TextInput';
+import Checkbox from './Checkbox';
+
+type NewTaskValues = {
+  task: string;
+  description: string;
+  done: boolean;
+  priority: string;
+};
+
+export default function NewTask() {
+  const { addNewTask } = useTaskContext();
+  const initialValues: NewTaskValues = {
+    task: '',
+    description: '',
+    done: false,
+    priority: 'medium',
+  };
+
+  // Validation schema with a generic word
+  const stringWithForbiddenWord = (forbiddenWord: string) =>
+    Yup.string()
+      .trim()
+      .required('That field must be filled.')
+      .test(
+        'forbidden-word',
+        `${forbiddenWord} is not a valid value.`,
+        (value) => !value?.toLowerCase().includes(forbiddenWord.toLowerCase())
+      );
+
+  const validationSchema = Yup.object({
+    task: stringWithForbiddenWord('Task'),
+    description: stringWithForbiddenWord('Description'),
+  });
+  const onSubmit = (
+    values: NewTaskValues,
+    { resetForm }: FormikHelpers<NewTaskValues>
+  ) => {
+    addNewTask(values.task, values.description, values.done, values.priority);
+    resetForm();
+  };
+
+  return (
+    <div>
+      <Formik<NewTaskValues>
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={onSubmit}
+      >
+        {({ isValid, dirty }) => (
+          <Form className='max-w-[25em] mx-auto my-4 p-[1rem] px-[1.2rem] border border-sky-300 rounded-md shadow-sm font-sans text-base'>
+            <TextInput
+              label='Your task'
+              name='task'
+              type='text'
+              placeholder='Insert your task here'
+            />
+            <TextInput
+              label='Task description'
+              name='description'
+              type='text'
+              placeholder='Insert your task description here'
+            />
+            <Checkbox name='done'>Task already done ?</Checkbox>
+            <Field
+              name='priority'
+              render={({ field, meta }: FieldProps) => (
+                <TaskPrioritySelector {...field} error={meta.error} />
+              )}
+            />
+            {/* button disabled if the form is not valid or hasn't been filled */}
+            <button
+              type='submit'
+              disabled={!isValid || !dirty}
+              className={`mt-5 rounded-lg text-[1rem] px-4 py-[0.45rem] font-medium ${
+                !isValid || !dirty
+                  ? 'bg-white border border-sky-300 text-black cursor-not-allowed'
+                  : 'bg-[#1976d2] text-white border-none cursor-pointer hover:brightness-125 hover:scale-105 transition duration-200'
+              }
+  `}
+            >
+              Add task
+            </button>
+          </Form>
+        )}
+      </Formik>
+    </div>
+  );
+}
+// import type { ChangeEvent, FormEvent } from 'react';
+// import { useCallback, useMemo, useState } from 'react';
+// import { useTaskContext } from '../contexts/TasksContext';
+
+// export default function NewTaskOld() {
+//   const { addNewTask } = useTaskContext();
+//   const [task, setTask] = useState<string>('');
+//   const [description, setDescription] = useState<string>('');
+
+//   const handleSubmit = useCallback(
+//     (event: FormEvent<HTMLFormElement>) => {
+//       event.preventDefault();
+
+//       if (!task.trim() || !description.trim()) return;
+
+//       addNewTask(task, description);
+//       setTask('');
+//       setDescription('');
+//     },
+//     [addNewTask, description, task]
+//   );
+
+//   //TODO function useCallback !
+//   const handleTaskChange = useCallback(
+//     (event: ChangeEvent<HTMLInputElement>) => {
+//       setTask(event.target.value);
+//     },
+//     []
+//   );
+
+//   const handleDescriptionChange = useCallback(
+//     (event: ChangeEvent<HTMLInputElement>) => {
+//       setDescription(event.target.value);
+//     },
+//     []
+//   );
+
+//   //TODO useMemo !
+//   const isSubmitDisabled = useMemo(() => {
+//     return !task.trim() || !description.trim();
+//   }, [task, description]);
+
+//   return (
+//     <form onSubmit={handleSubmit}>
+//       <p>
+//         <label htmlFor='task'>Your task </label>
+//         <input
+//           id='task'
+//           type='text'
+//           value={task}
+//           onChange={handleTaskChange}
+//           style={{
+//             color: task.toLowerCase().includes('task') ? 'red' : undefined,
+//           }}
+//         />
+//       </p>
+//       <p>{`Task feedback ${task}`}</p>
+//       <p>
+//         <label htmlFor='description'>Your task description </label>
+//         <input
+//           id='description'
+//           type='text'
+//           value={description}
+//           onChange={handleDescriptionChange}
+//           style={{
+//             color: description.toLowerCase().includes('description')
+//               ? 'red'
+//               : undefined,
+//           }}
+//         />
+//       </p>
+//       <p>{`Description feedback ${description}`}</p>
+//       {/**/}
+//       {/* When you type 'task' in task input  => set the color to 'red' */}
+//       {/* Add validation, if empty => submit button is disabled */}
+//       <p>
+//         <button disabled={isSubmitDisabled}>Add task</button>
+//       </p>
+//     </form>
+//   );
+// }
+import { useState } from 'react';
+import { useTaskContext } from '../contexts/TasksContext';
+import DeleteTaskModal from './DeleteTaskModal';
+import { Link } from 'react-router';
+import TaskPriorityUpdater from './TaskPriorityUpdater';
+import Button from './Button';
+import {
+  getPriorityClasses,
+  getButtonPriorityClasses,
+  type PriorityColor,
+} from '../utils/colorsPriority';
+
+type TaskItemProps = {
+  taskId: number;
+  detailed: boolean;
+};
+
+export default function TaskItem({ taskId, detailed }: TaskItemProps) {
+  const { tasks, deleteTask, toggleTask } = useTaskContext();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const task = tasks.find((task) => task.id === taskId);
+
+  if (!task) return null;
+
+  const { id, title, description, done, priority } = task;
+
+  const priorityColor: PriorityColor = done
+    ? 'green'
+    : priority === 'high'
+    ? 'red'
+    : priority === 'medium'
+    ? 'orange'
+    : 'yellow';
+
+  const priorityClass = getPriorityClasses(priorityColor);
+  const buttonPriorityClass = getButtonPriorityClasses(priorityColor);
+
+  const handleConfirmDelete = () => {
+    deleteTask(id);
+    setShowConfirm(false);
+  };
+
+  const handleCancelDelete = () => {
+    setShowConfirm(false);
+  };
+
+  return (
+    <article
+      className={`relative overflow-hidden rounded-lg p-4 cursor-pointer hover:scale-105 transition duration-200 ${priorityClass}`}
+    >
+      <Link
+        to={`/task/${id}`}
+        style={{ textDecoration: 'none', color: 'inherit' }}
+        className='block relative z-10'
+      >
+        <div>
+          <h2 className='text-2xl font-semibold'>{title}</h2>
+          <h3 className='text-xl'>{description}</h3>
+          {detailed && <p className='mt-4 font-semibold'>{`Id: ${id}`}</p>}
+        </div>
+      </Link>
+      <div className='mt-3'>
+        <TaskPriorityUpdater taskId={id} currentPriority={priority} />
+        <Button
+          className={buttonPriorityClass}
+          onClick={() => setShowConfirm(true)}
+        >
+          Delete
+        </Button>
+        <Button className={buttonPriorityClass} onClick={() => toggleTask(id)}>
+          Task done
+        </Button>
+      </div>
+
+      {showConfirm && (
+        <DeleteTaskModal
+          title='Delete task'
+          message={`Do you really want to delete this task : ${task.title} ?`}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
+    </article>
+  );
+}
+import TaskItem from './TaskItem';
+import { useTaskContext } from '../contexts/TasksContext';
+
+type TaskListProps = {
+  detailed: boolean;
+};
+
+export default function TaskList({ detailed }: TaskListProps) {
+  const { tasks } = useTaskContext();
+
+  return (
+    <ul className='flex flex-wrap gap-4 p-0 list-none m-0 mx-auto max-w-[1200px] justify-center'>
+      {tasks.map((task) => (
+        <li
+          key={task.id}
+          className='flex-grow flex-shrink basis-[250px] max-w-[300px] box-border'
+        >
+          <TaskItem taskId={task.id} detailed={detailed}></TaskItem>
+        </li>
+      ))}
+    </ul>
+  );
+}
+import { getPriorityClasses } from '../utils/colorsPriority';
+
+type TaskPrioritySelectorProps = {
+  error?: string;
+} & React.SelectHTMLAttributes<HTMLSelectElement>;
+
+export default function TaskPrioritySelector({
+  error,
+  ...props
+}: TaskPrioritySelectorProps) {
+  return (
+    <div>
+      <select {...props} className='mt-1 border-2'>
+        <option value='low' className={getPriorityClasses('yellow')}>
+          Low
+        </option>
+        <option value='medium' className={getPriorityClasses('orange')}>
+          Medium
+        </option>
+        <option value='high' className={getPriorityClasses('red')}>
+          High
+        </option>
+      </select>
+      {error ? <div className='error'>{error}</div> : null}
+    </div>
+  );
+}
+import { useTaskContext } from '../contexts/TasksContext';
+import TaskPrioritySelector from './TaskPrioritySelector';
+
+type TaskPriorityUpdaterProps = {
+  taskId: number;
+  currentPriority: string;
+};
+
+export default function TaskPriorityUpdater({
+  taskId,
+  currentPriority,
+}: TaskPriorityUpdaterProps) {
+  const { updateTaskPriority } = useTaskContext();
+
+  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    updateTaskPriority(taskId, event.target.value);
+  };
+
+  return (
+    <TaskPrioritySelector
+      id={`priority-${taskId}`}
+      value={currentPriority}
+      onChange={handleChange}
+      className={`px-1.25 py-1.25 text-lg text-center rounded-lg border-2 my-1.25 focus:outline-none ${currentPriority}`}
+    />
+  );
+}
+import { useField } from 'formik';
+
+type TextInputProps = {
+  label: string;
+} & React.InputHTMLAttributes<HTMLInputElement>;
+
+export default function TextInput({ label, ...props }: TextInputProps) {
+  const [field, meta] = useField(props);
+  const isError = meta.error && meta.value !== '';
+  const inputId = props.id || props.name;
+
+  return (
+    <>
+      <label
+        htmlFor={inputId}
+        className='block mb-[0.2rem] font-medium text-[#333]'
+      >
+        {label}
+      </label>
+      <input
+        id={inputId}
+        className={`w-full mb-2 px-2 py-[0.35rem] border border-sky-300 rounded text-base ${
+          isError ? 'text-red-500' : undefined
+        }`}
+        {...field}
+        {...props}
+      />
+      <div className='text-red-600 text-[0.9rem] -mt-[0.3rem] mb-[0.4rem]'>
+        {isError ? meta.error : null}
+      </div>
+    </>
+  );
+}
+/* eslint-disable react-refresh/only-export-components */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+export type TaskItem = {
+  id: number;
+  title: string;
+  description: string;
+  done: boolean;
+  detailed: boolean;
+  priority: string;
+};
+
+type TaskContextType = {
+  tasks: TaskItem[];
+  addNewTask: (
+    task: string,
+    description: string,
+    done: boolean,
+    priority: string
+  ) => void;
+  toggleTask: (id: number) => void;
+  deleteTask: (id: number) => void;
+  updateTaskPriority: (id: number, newPriority: string) => void;
+  doneCount: number;
+  totalCount: number;
+};
+
+const TaskContext = React.createContext<TaskContextType>(null!);
+
+export const TaskContextProvider = ({ children }: React.PropsWithChildren) => {
+  //USe LocaleStorage
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  // last id registered storage to avoid duplication of id
+  const [lastId, setLastId] = useState<number>(0);
+  const [isStorageLoaded, setIsStorageLoaded] = useState<boolean>(false);
+
+  //UseMOunt or use EffectOnce
+  useEffect(() => {
+    const storedTasks = localStorage.getItem('tasks');
+    const storedLastId = localStorage.getItem('lastId');
+
+    if (storedTasks) {
+      try {
+        const parsedTasks = JSON.parse(storedTasks);
+        if (!Array.isArray(parsedTasks)) {
+          throw new Error('Local storage value invalid : ' + storedTasks);
+        }
+        setTasks(parsedTasks);
+        setIsStorageLoaded(true);
+      } catch (error) {
+        console.error('Parsing error: ', error);
+      }
+    }
+
+    if (storedLastId) {
+      const parsedLastId = parseInt(storedLastId, 10);
+      if (!isNaN(parsedLastId)) {
+        setLastId(parsedLastId);
+      }
+    }
+  }, []);
+
+  //Sync locale storage with current state
+  useEffect(() => {
+    if (isStorageLoaded) {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      localStorage.setItem('lastId', lastId.toString());
+    }
+  }, [tasks, lastId, isStorageLoaded]);
+
+  const handleAddTask = useCallback(
+    (task: string, description: string, done: boolean, priority: string) => {
+      setTasks((prevTasks) => {
+        const newTask: TaskItem = {
+          id: lastId,
+          title: task,
+          description: description,
+          done: done,
+          detailed: true,
+          priority: priority,
+        };
+        const newTasks = [...prevTasks, newTask];
+        return newTasks;
+      });
+      setLastId((prev) => prev + 1);
+    },
+    [lastId]
+  );
+
+  function handleDeleteTask(id: number) {
+    setTasks((prevTasks) => {
+      const updatedTasks = prevTasks.filter((task) => task.id !== id);
+      return updatedTasks;
+    });
+  }
+
+  function handleToggleTask(id: number) {
+    setTasks((prevTasks) => {
+      const updatedTasks = prevTasks.map((task) =>
+        task.id === id ? { ...task, done: !task.done } : task
+      );
+      return updatedTasks;
+    });
+  }
+
+  function handleUpdateTaskPriority(id: number, newPriority: string) {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, priority: newPriority } : task
+      )
+    );
+  }
+
+  const doneCount = useMemo(
+    () => tasks.filter((task) => task.done).length,
+    [tasks]
+  );
+  const totalCount = tasks.length;
+
+  return (
+    <TaskContext.Provider
+      value={{
+        addNewTask: handleAddTask,
+        deleteTask: handleDeleteTask,
+        toggleTask: handleToggleTask,
+        updateTaskPriority: handleUpdateTaskPriority,
+        tasks,
+        doneCount,
+        totalCount,
+      }}
+    >
+      {children}
+    </TaskContext.Provider>
+  );
+};
+
+export const useTaskContext = () => React.useContext(TaskContext);
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import { TaskContextProvider } from './contexts/TasksContext.tsx';
+import { BrowserRouter } from 'react-router';
+import App from './App.tsx';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <TaskContextProvider>
+        <App />
+      </TaskContextProvider>
+    </BrowserRouter>
+  </StrictMode>
+);
+import Dashboard from '../components/Dashboard';
+import TaskList from '../components/TaskList';
+
+export function DashboardPage() {
+  return (
+    <div>
+      <Dashboard />
+      <TaskList detailed />
+    </div>
+  );
+}
+import Dashboard from '../components/Dashboard';
+import NewTask from '../components/NewTask';
+import TaskList from '../components/TaskList';
+
+export function HomePage() {
+  return (
+    <div>
+      <Dashboard />
+      <NewTask />
+      <TaskList detailed={false} />
+    </div>
+  );
+}
+export default function NotFoundPage() {
+  return <h1>Page not found</h1>;
+}
+import { useParams } from 'react-router';
+import TaskItem from '../components/TaskItem';
+import { useTaskContext } from '../contexts/TasksContext';
+
+export default function TaskPage() {
+  const { taskId } = useParams();
+  const { tasks } = useTaskContext();
+
+  const id = parseInt(taskId || '', 10);
+  const task = tasks.find((task) => task.id === id);
+
+  if (!task) {
+    return <h1>Task not found</h1>;
+  }
+
+  return (
+    <div className='mx-auto max-w-[250px] mt-[25px]'>
+      <TaskItem taskId={task.id} detailed={true} />
+    </div>
+  );
+}
+import { Route, Routes } from 'react-router';
+import { HomePage } from './pages/HomePage';
+import { DashboardPage } from './pages/DashboardPage';
+import NotFoundPage from './pages/NotFoundPage';
+import TaskPage from './pages/TaskPage';
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route path='/' element={<HomePage />} />
+      <Route path='/dashboard' element={<DashboardPage />} />
+      <Route path='/task/:taskId' element={<TaskPage />} />
+      <Route path='/*' element={<NotFoundPage />} />
+    </Routes>
+  );
+}
+export type PriorityColor = 'red' | 'orange' | 'yellow' | 'green';
+
+const priorityColors: Record<PriorityColor, string> = {
+  red: 'bg-[#f7a59a] text-[#5a2e0c] border-2 border-[#5a2e0c]',
+  orange: 'bg-[#f3b16a] text-[#5a2e0c] border-2 border-[#5a2e0c]',
+  yellow: 'bg-[#f7d878] text-[#5a2e0c] border-2 border-[#5a2e0c]',
+  green: 'bg-[#6fcf97] text-[#1f4723] border-2 border-[#1f4723]',
+};
+
+const buttonStyles: Record<PriorityColor, string> = {
+  red: 'bg-[#5a2e0c] text-[#f7a59a] border-2 border-[#f7a59a] hover:bg-[#f7a59a] hover:text-[#5a2e0c] hover:border-[#5a2e0c]',
+  orange: 'bg-[#5a2e0c] text-[#f3b16a] border-2 border-[#f3b16a] hover:bg-[#f3b16a] hover:text-[#5a2e0c] hover:border-[#5a2e0c]',
+  yellow: 'bg-[#5a2c0c] text-[#f7d878] border-2 border-[#f7d878] hover:bg-[#f7d878] hover:text-[#5a2e0c] hover:border-[#5a2e0c]',
+  green: 'bg-[#1f4723] text-[#6fcf97] border-2 border-[#6fcf97] hover:bg-[#6fcf97] hover:text-[#1f4723] hover:border-[#1f4723]',
+};
+
+export function getPriorityClasses(priorityColor: PriorityColor) {
+  return priorityColors[priorityColor] ?? '';
+}
+
+export function getButtonPriorityClasses(priorityColor: PriorityColor) {
+  return buttonStyles[priorityColor] ?? '';
+}
+/// <reference types="vite/client" />

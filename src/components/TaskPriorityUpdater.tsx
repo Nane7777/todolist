@@ -21,7 +21,7 @@ export default function TaskPriorityUpdater({
       id={`priority-${taskId}`}
       value={currentPriority}
       onChange={handleChange}
-      className={`priority-select ${currentPriority}`}
+      className={`${currentPriority}`}
     />
   );
 }

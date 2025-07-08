@@ -3,6 +3,12 @@ import { useTaskContext } from '../contexts/TasksContext';
 import DeleteTaskModal from './DeleteTaskModal';
 import { Link } from 'react-router';
 import TaskPriorityUpdater from './TaskPriorityUpdater';
+import Button from './Button';
+import {
+  getPriorityClasses,
+  getButtonPriorityClasses,
+  type PriorityColor,
+} from '../utils/colorsPriority';
 
 type TaskItemProps = {
   taskId: number;
@@ -18,15 +24,16 @@ export default function TaskItem({ taskId, detailed }: TaskItemProps) {
 
   const { id, title, description, done, priority } = task;
 
-  const priorityColorClass = done
-    ? 'bg-green'
+  const priorityColor: PriorityColor = done
+    ? 'green'
     : priority === 'high'
-    ? 'bg-red'
+    ? 'red'
     : priority === 'medium'
-    ? 'bg-orange'
-    : 'bg-yellow';
+    ? 'orange'
+    : 'yellow';
 
-  const cardClass = `task-card ${priorityColorClass}`;
+  const priorityClass = getPriorityClasses(priorityColor);
+  const buttonPriorityClass = getButtonPriorityClasses(priorityColor);
 
   const handleConfirmDelete = () => {
     deleteTask(id);
@@ -38,32 +45,37 @@ export default function TaskItem({ taskId, detailed }: TaskItemProps) {
   };
 
   return (
-    <article className={cardClass}>
+    <article
+      className={`relative overflow-hidden rounded-lg p-4 cursor-pointer hover:scale-105 transition duration-200 ${priorityClass}`}
+    >
       <Link
         to={`/task/${id}`}
         style={{ textDecoration: 'none', color: 'inherit' }}
+        className='block relative z-10'
       >
         <div>
-          <h2>{title}</h2>
-          <h3>{description}</h3>
-          {detailed && (
-            <>
-              <p>{`Task done ? ${done}`}</p>
-              <p>{`Id: ${id}`}</p>
-            </>
-          )}
+          <h2 className='text-2xl font-semibold'>{title}</h2>
+          <h3 className='text-xl'>{description}</h3>
+          {detailed && <p className='mt-4 font-semibold'>{`Id: ${id}`}</p>}
         </div>
       </Link>
-      <div>
+      <div className='mt-3'>
         <TaskPriorityUpdater taskId={id} currentPriority={priority} />
-        <button onClick={() => setShowConfirm(true)}>Delete</button>
-        <button onClick={() => toggleTask(id)}>Task done</button>
+        <Button
+          className={buttonPriorityClass}
+          onClick={() => setShowConfirm(true)}
+        >
+          Delete
+        </Button>
+        <Button className={buttonPriorityClass} onClick={() => toggleTask(id)}>
+          Task done
+        </Button>
       </div>
 
       {showConfirm && (
         <DeleteTaskModal
           title='Delete task'
-          message='Do you really want to delete this task ?'
+          message={`Do you really want to delete this task : ${task.title} ?`}
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
         />
