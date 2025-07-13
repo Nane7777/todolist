@@ -15,7 +15,7 @@ function App() {
       <div>
         <HeaderMenu />
       </div>
-        <p>BONOJOUR</p>
+        <p>BONJOUR</p>
       <div>
         <AppRoutes />
       </div>
