@@ -15,7 +15,6 @@ function App() {
       <div>
         <HeaderMenu />
       </div>
-        <p>BONJOUR</p>
       <div>
         <AppRoutes />
       </div>
