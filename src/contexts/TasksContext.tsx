@@ -58,6 +58,8 @@ export const TaskContextProvider = ({ children }: React.PropsWithChildren) => {
         setLastId(parsedLastId);
       }
     }
+
+    setIsStorageLoaded(true);
   }, []);
 
   //Sync locale storage with current state
